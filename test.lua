@@ -60,7 +60,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local flying = false
-local speed = 60 -- Tốc độ bay (Đã buff nhẹ lên 60 cho bay mượt)
+local speed = 300 -- Tốc độ bay (Đã buff nhẹ lên 60 cho bay mượt)
 local flyConnection = nil -- Biến lưu trữ kết nối để ngắt sạch khi tắt
 
 local function toggleFly()
