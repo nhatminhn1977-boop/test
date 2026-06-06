@@ -11,15 +11,15 @@ local G2L = {}
 
 -- 1. Khởi tạo ScreenGui
 G2L["1"] = Instance.new("ScreenGui")
-G2L["1"].Name = "HoldPlayerGuiSystem"
+G2L["1"].Name = "SpeedTrollGui"
 G2L["1"].ResetOnSpawn = false
 G2L["1"].Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
--- 2. Tạo Frame chính (Menu bo góc)
+-- 2. Tạo Frame chính (Menu bo góc xịn)
 local MainFrame = Instance.new("Frame", G2L["1"])
-MainFrame.Size = UDim2.new(0, 260, 0, 110)
+MainFrame.Size = UDim2.new(0, 260, 0, 160)
 MainFrame.Position = UDim2.new(0.4, 0, 0.4, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true 
@@ -31,40 +31,53 @@ MainCorner.CornerRadius = UDim.new(0, 10)
 local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1, 0, 0, 35)
 Title.BackgroundTransparency = 1
-Title.Text = "BRING & HOLD 1S TOOL"
+Title.Text = "FORCE SPEED TROLL"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 14
+Title.TextSize = 13
 Title.Font = Enum.Font.SourceSansBold
 
--- 3. Ô TextBox nhập tên người chơi
+-- 3. Ô nhập tên nạn nhân
 local NameInput = Instance.new("TextBox", MainFrame)
-NameInput.Size = UDim2.new(0, 220, 0, 45)
-NameInput.Position = UDim2.new(0.5, -110, 0, 45)
+NameInput.Size = UDim2.new(0, 220, 0, 40)
+NameInput.Position = UDim2.new(0.5, -110, 0, 40)
 NameInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 NameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-NameInput.PlaceholderText = "Nhập tên mục tiêu rồi ấn Enter..."
-NameInput.PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
+NameInput.PlaceholderText = "Nhập tên nạn nhân..."
 NameInput.Text = ""
 NameInput.TextSize = 14
 NameInput.Font = Enum.Font.SourceSansSemibold
-NameInput.BorderSizePixel = 0
 NameInput.ClearTextOnFocus = true
 
-local InputCorner = Instance.new("UICorner", NameInput)
-InputCorner.CornerRadius = UDim.new(0, 8)
+local Corner1 = Instance.new("UICorner", NameInput)
+Corner1.CornerRadius = UDim.new(0, 6)
 
-local InputStroke = Instance.new("UIStroke", NameInput)
-InputStroke.Color = Color3.fromRGB(46, 204, 113) -- Đổi sang màu xanh lá cho uy tín
-InputStroke.Thickness = 1.5
+-- 4. Ô nhập tốc độ ép buộc (Ví dụ: 100 để đẩy bay màu, 0 để đóng băng)
+local SpeedInput = Instance.new("TextBox", MainFrame)
+SpeedInput.Size = UDim2.new(0, 220, 0, 40)
+SpeedInput.Position = UDim2.new(0.5, -110, 0, 95)
+SpeedInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+SpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedInput.PlaceholderText = "Nhập tốc độ muốn ép (Ví dụ: 100)"
+SpeedInput.Text = ""
+SpeedInput.TextSize = 14
+SpeedInput.Font = Enum.Font.SourceSansSemibold
+SpeedInput.ClearTextOnFocus = true
+
+local Corner2 = Instance.new("UICorner", SpeedInput)
+Corner2.CornerRadius = UDim.new(0, 6)
+
+local UIStroke = Instance.new("UIStroke", SpeedInput)
+UIStroke.Color = Color3.fromRGB(155, 89, 182) -- Viền màu tím huyền bí
+UIStroke.Thickness = 1.5
 
 -- =======================================================
--- LOGIC XỬ LÝ DỊCH CHUYỂN VÀ GIỮ CHÂN MỤC TIÊU 1 GIÂY
+-- LOGIC TÁC ĐỘNG VẬN TỐC ÉP TỐC ĐỘ (SPEED FORCE)
 -- =======================================================
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- Hàm tìm kiếm người chơi viết tắt
 local function GetPlayerByName(targetName)
     targetName = string.lower(targetName)
     for _, p in ipairs(Players:GetPlayers()) do
@@ -75,65 +88,77 @@ local function GetPlayerByName(targetName)
     return nil
 end
 
--- Lắng nghe sự kiện gõ tên xong nhấn ENTER
-NameInput.FocusLost:Connect(function(enterPressed)
-    if enterPressed and NameInput.Text ~= "" then
-        local inputText = NameInput.Text
+-- Lắng nghe khi nhập xong Tốc độ và ấn ENTER
+SpeedInput.FocusLost:Connect(function(enterPressed)
+    if enterPressed and NameInput.Text ~= "" and SpeedInput.Text ~= "" then
+        local targetPlayer = GetPlayerByName(NameInput.Text)
+        local targetSpeed = tonumber(SpeedInput.Text) or 50 -- Mặc định là 50 nếu gõ nhầm chữ
         
-        local myChar = LocalPlayer.Character
-        local myHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
-        
-        if not myHrp then
-            NameInput.PlaceholderText = "Không tìm thấy vị trí của bạn!"
-            NameInput.Text = ""
+        if not targetPlayer then
+            SpeedInput.PlaceholderText = "Không tìm thấy người này!"
+            SpeedInput.Text = ""
             return
         end
         
-        local targetPlayer = GetPlayerByName(inputText)
-        
-        if targetPlayer then
-            if targetPlayer == LocalPlayer then
-                NameInput.PlaceholderText = "Bạn nhập tên bạn làm gì?"
-                NameInput.Text = ""
-                return
-            end
+        if targetPlayer == LocalPlayer then
+            -- Nếu tự chỉnh bản thân thì quá đơn giản, chỉnh trực tiếp WalkSpeed luôn vì máy mình có quyền!
+            local myHumanoid = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+            myHumanoid = myHumanoid:FindFirstChildOfClass("Humanoid")
+            if myHumanoid then myHumanoid.WalkSpeed = targetSpeed end
+            SpeedInput.PlaceholderText = "Đã chỉnh tốc độ bản thân!"
+            SpeedInput.Text = ""
+            return
+        end
+
+        -- TROLL NGƯỜI KHÁC: Tạo thread đẩy lực liên tục trong 5 giây
+        task.spawn(function()
+            SpeedInput.PlaceholderText = "Đang ép tốc độ lên " .. targetPlayer.DisplayName
+            local startTime = os.clock()
             
-            -- Chạy bất đồng bộ (Thread riêng) bằng task.spawn để không làm treo UI
-            task.spawn(function()
-                NameInput.PlaceholderText = "Đang giữ chân: " .. targetPlayer.DisplayName
+            while os.clock() - startTime < 5 do -- Tác dụng trong 5 giây
+                local char = targetPlayer.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local humanoid = char and char:FindFirstChildOfClass("Humanoid")
                 
-                -- Tạo một mốc thời gian bắt đầu ghim vị trí
-                local startTime = os.clock()
-                
-                -- Vòng lặp liên tục ghim vị trí mục tiêu trước mặt bạn trong đúng 1 giây
-                while os.clock() - startTime < 1 do
-                    local targetChar = targetPlayer.Character
-                    local targetHrp = targetChar and targetChar:FindFirstChild("HumanoidRootPart")
+                if hrp and humanoid then
+                    -- Xóa BodyVelocity troll cũ nếu có
+                    local oldV = hrp:FindFirstChild("TrollVelocity")
+                    if oldV then oldV:Destroy() end
                     
-                    -- Cập nhật lại tọa độ của bạn liên tục (phòng trường hợp bạn đang di chuyển)
-                    myChar = LocalPlayer.Character
-                    myHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
+                    -- Tạo lực đẩy dựa trên hướng di chuyển hiện tại của họ
+                    local bv = Instance.new("BodyVelocity")
+                    bv.Name = "TrollVelocity"
+                    bv.MaxForce = Vector3.new(1e5, 0, 1e5) -- Chỉ đẩy theo trục ngang mặt đất
                     
-                    if targetHrp and myHrp then
-                        -- Ghim liên tục mục tiêu cách bạn 3 studs về phía trước mặt
-                        targetHrp.CFrame = myHrp.CFrame * CFrame.new(0, 0, -3)
-                        targetHrp.Velocity = Vector3.new(0, 0, 0)
-                        targetHrp.RotVelocity = Vector3.new(0, 0, 0) -- Xóa luôn lực xoay
+                    if humanoid.MoveDirection.Magnitude > 0 then
+                        -- Nếu họ đang đi, buff cho họ lao đi như tên bắn
+                        bv.Velocity = humanoid.MoveDirection * targetSpeed
                     else
-                        break -- Nếu họ thoát game hoặc chết thì dừng vòng lặp
+                        -- Nếu targetSpeed = 0 và họ đang đứng im, ghim chặt không cho họ đi
+                        if targetSpeed == 0 then
+                            bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+                            bv.Velocity = Vector3.new(0, 0, 0)
+                        end
                     end
                     
-                    -- Chờ 1 khoảng cực ngắn (chu kỳ quét vật lý) rồi lặp lại để ghim liên tục
-                    task.wait() 
+                    bv.Parent = hrp
+                else
+                    break
                 end
-                
-                NameInput.PlaceholderText = "Đã thả mục tiêu ra!"
-            end)
-        else
-            NameInput.PlaceholderText = "Không tìm thấy ai khớp tên!"
-        end
+                task.wait(0.1) -- Cập nhật mỗi 0.1 giây
+            end
+            
+            -- Dọn dẹp sau khi hết 5 giây troll
+            local char = targetPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local oldV = hrp:FindFirstChild("TrollVelocity")
+                if oldV then oldV:Destroy() end
+            end
+            SpeedInput.PlaceholderText = "Hết thời gian troll!"
+        end)
         
-        NameInput.Text = ""
+        SpeedInput.Text = ""
     end
 end)
 
