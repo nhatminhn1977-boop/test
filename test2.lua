@@ -8,157 +8,205 @@
 ]=]
 
 local G2L = {}
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
 -- 1. Khởi tạo ScreenGui
 G2L["1"] = Instance.new("ScreenGui")
-G2L["1"].Name = "SpeedTrollGui"
+G2L["1"].Name = "AdvancedTrollHub"
 G2L["1"].ResetOnSpawn = false
-G2L["1"].Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+G2L["1"].Parent = LocalPlayer:WaitForChild("PlayerGui")
 
 -- 2. Tạo Frame chính (Menu bo góc xịn)
 local MainFrame = Instance.new("Frame", G2L["1"])
-MainFrame.Size = UDim2.new(0, 260, 0, 160)
-MainFrame.Position = UDim2.new(0.4, 0, 0.4, 0)
+MainFrame.Size = UDim2.new(0, 280, 0, 360)
+MainFrame.Position = UDim2.new(0.4, 0, 0.25, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true 
 
 local MainCorner = Instance.new("UICorner", MainFrame)
-MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.CornerRadius = UDim.new(0, 12)
 
 -- Tiêu đề Menu
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, 0, 0, 35)
+Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
-Title.Text = "FORCE SPEED TROLL"
+Title.Text = "🎯 PLAYER TARGET HUB 🎯"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 13
+Title.TextSize = 14
 Title.Font = Enum.Font.SourceSansBold
 
--- 3. Ô nhập tên nạn nhân
-local NameInput = Instance.new("TextBox", MainFrame)
-NameInput.Size = UDim2.new(0, 220, 0, 40)
-NameInput.Position = UDim2.new(0.5, -110, 0, 40)
-NameInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-NameInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-NameInput.PlaceholderText = "Nhập tên nạn nhân..."
-NameInput.Text = ""
-NameInput.TextSize = 14
-NameInput.Font = Enum.Font.SourceSansSemibold
-NameInput.ClearTextOnFocus = true
+-- 3. KHUNG CUỘN DANH SÁCH NGƯỜI CHƠI (ScrollingFrame)
+local PlayerListFrame = Instance.new("ScrollingFrame", MainFrame)
+PlayerListFrame.Size = UDim2.new(0, 240, 0, 150)
+PlayerListFrame.Position = UDim2.new(0.5, -120, 0, 45)
+PlayerListFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+PlayerListFrame.BorderSizePixel = 0
+PlayerListFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Tự động co giãn theo số lượng người
+PlayerListFrame.ScrollBarThickness = 6
+PlayerListFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
 
-local Corner1 = Instance.new("UICorner", NameInput)
-Corner1.CornerRadius = UDim.new(0, 6)
+local ListCorner = Instance.new("UICorner", PlayerListFrame)
+ListCorner.CornerRadius = UDim.new(0, 8)
 
--- 4. Ô nhập tốc độ ép buộc (Ví dụ: 100 để đẩy bay màu, 0 để đóng băng)
-local SpeedInput = Instance.new("TextBox", MainFrame)
-SpeedInput.Size = UDim2.new(0, 220, 0, 40)
-SpeedInput.Position = UDim2.new(0.5, -110, 0, 95)
-SpeedInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-SpeedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
-SpeedInput.PlaceholderText = "Nhập tốc độ muốn ép (Ví dụ: 100)"
-SpeedInput.Text = ""
-SpeedInput.TextSize = 14
-SpeedInput.Font = Enum.Font.SourceSansSemibold
-SpeedInput.ClearTextOnFocus = true
+-- Layout để các nút tên người chơi tự động xếp thẳng hàng xuống dưới
+local UIListLayout = Instance.new("UIListLayout", PlayerListFrame)
+UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+UIListLayout.Padding = UDim.new(0, 4)
 
-local Corner2 = Instance.new("UICorner", SpeedInput)
-Corner2.CornerRadius = UDim.new(0, 6)
+-- 4. KHUNG ĐIỀN NỘI DUNG (TextBox)
+local ContentInput = Instance.new("TextBox", MainFrame)
+ContentInput.Size = UDim2.new(0, 240, 0, 45)
+ContentInput.Position = UDim2.new(0.5, -120, 0, 210)
+ContentInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+ContentInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+ContentInput.PlaceholderText = "Nhập nội dung muốn troll tại đây..."
+ContentInput.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
+ContentInput.Text = ""
+ContentInput.TextSize = 13
+ContentInput.Font = Enum.Font.SourceSansSemibold
+ContentInput.BorderSizePixel = 0
+ContentInput.ClearTextOnFocus = false
 
-local UIStroke = Instance.new("UIStroke", SpeedInput)
-UIStroke.Color = Color3.fromRGB(155, 89, 182) -- Viền màu tím huyền bí
-UIStroke.Thickness = 1.5
+local InputCorner = Instance.new("UICorner", ContentInput)
+InputCorner.CornerRadius = UDim.new(0, 8)
+
+-- 5. NÚT KÍCH HOẠT (TextButton)
+local ActionButton = Instance.new("TextButton", MainFrame)
+ActionButton.Size = UDim2.new(0, 240, 0, 45)
+ActionButton.Position = UDim2.new(0.5, -120, 0, 270)
+ActionButton.BackgroundColor3 = Color3.fromRGB(142, 68, 173) -- Màu tím hoàng gia quyền lực
+ActionButton.Text = "KÍCH HOẠT SCRIPT"
+ActionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ActionButton.TextSize = 15
+ActionButton.Font = Enum.Font.SourceSansBold
+ActionButton.BorderSizePixel = 0
+
+local ButtonCorner = Instance.new("UICorner", ActionButton)
+ButtonCorner.CornerRadius = UDim.new(0, 8)
 
 -- =======================================================
--- LOGIC TÁC ĐỘNG VẬN TỐC ÉP TỐC ĐỘ (SPEED FORCE)
+-- HỆ THỐNG XỬ LÝ LOGIC UI VÀ TỰ ĐỘNG CẬP NHẬT DANH SÁCH
 -- =======================================================
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local LocalPlayer = Players.LocalPlayer
+local selectedPlayer = nil -- Biến lưu trữ người chơi đang được chọn
 
-local function GetPlayerByName(targetName)
-    targetName = string.lower(targetName)
-    for _, p in ipairs(Players:GetPlayers()) do
-        if string.find(string.lower(p.Name), targetName) or string.find(string.lower(p.DisplayName), targetName) then
-            return p
+-- Hàm cập nhật và vẽ lại toàn bộ danh sách người chơi
+local function RefreshPlayerList()
+    -- Xóa các nút cũ trước (trừ cái UIListLayout)
+    for _, child in ipairs(PlayerListFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
         end
     end
-    return nil
+    
+    -- Duyệt qua tất cả người chơi trong phòng để tạo nút bấm
+    for _, p in ipairs(Players:GetPlayers()) do
+        local pButton = Instance.new("TextButton", PlayerListFrame)
+        pButton.Size = UDim2.new(1, -8, 0, 30) -- Rộng fit khung cuộn, cao 30px
+        pButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+        pButton.Text = p.DisplayName .. " (@" .. p.Name .. ")"
+        pButton.TextColor3 = Color3.fromRGB(230, 230, 230)
+        pButton.TextSize = 12
+        pButton.Font = Enum.Font.SourceSans
+        pButton.BorderSizePixel = 0
+        
+        local bCorner = Instance.new("UICorner", pButton)
+        bCorner.CornerRadius = UDim.new(0, 4)
+        
+        -- Sự kiện khi click chọn người chơi này trong danh sách
+        pButton.MouseButton1Click:Connect(function()
+            selectedPlayer = p
+            -- Đổi màu tất cả các nút khác về màu tối mặc định
+            for _, btn in ipairs(PlayerListFrame:GetChildren()) do
+                if btn:IsA("TextButton") then btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50) end
+            end
+            -- Đổi nút được chọn sang màu xanh dương để đánh dấu
+            pButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+            ActionButton.Text = "KÍCH HOẠT $\rightarrow$ " .. p.DisplayName
+        end)
+    end
+    
+    -- Tự động tính toán lại chiều dài thanh cuộn dựa trên số lượng người chơi
+    PlayerListFrame.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y)
 end
 
--- Lắng nghe khi nhập xong Tốc độ và ấn ENTER
-SpeedInput.FocusLost:Connect(function(enterPressed)
-    if enterPressed and NameInput.Text ~= "" and SpeedInput.Text ~= "" then
-        local targetPlayer = GetPlayerByName(NameInput.Text)
-        local targetSpeed = tonumber(SpeedInput.Text) or 50 -- Mặc định là 50 nếu gõ nhầm chữ
-        
-        if not targetPlayer then
-            SpeedInput.PlaceholderText = "Không tìm thấy người này!"
-            SpeedInput.Text = ""
-            return
-        end
-        
-        if targetPlayer == LocalPlayer then
-            -- Nếu tự chỉnh bản thân thì quá đơn giản, chỉnh trực tiếp WalkSpeed luôn vì máy mình có quyền!
-            local myHumanoid = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-            myHumanoid = myHumanoid:FindFirstChildOfClass("Humanoid")
-            if myHumanoid then myHumanoid.WalkSpeed = targetSpeed end
-            SpeedInput.PlaceholderText = "Đã chỉnh tốc độ bản thân!"
-            SpeedInput.Text = ""
-            return
-        end
+-- Tự động vẽ lại danh sách khi có người vào hoặc rời server
+Players.PlayerAdded:Connect(RefreshPlayerList)
+Players.PlayerRemoving:Connect(function(p)
+    if selectedPlayer == p then
+        selectedPlayer = nil
+        ActionButton.Text = "KÍCH HOẠT SCRIPT"
+    end
+    RefreshPlayerList()
+end)
 
-        -- TROLL NGƯỜI KHÁC: Tạo thread đẩy lực liên tục trong 5 giây
-        task.spawn(function()
-            SpeedInput.PlaceholderText = "Đang ép tốc độ lên " .. targetPlayer.DisplayName
-            local startTime = os.clock()
-            
-            while os.clock() - startTime < 5 do -- Tác dụng trong 5 giây
-                local char = targetPlayer.Character
-                local hrp = char and char:FindFirstChild("HumanoidRootPart")
-                local humanoid = char and char:FindFirstChildOfClass("Humanoid")
-                
-                if hrp and humanoid then
-                    -- Xóa BodyVelocity troll cũ nếu có
-                    local oldV = hrp:FindFirstChild("TrollVelocity")
-                    if oldV then oldV:Destroy() end
-                    
-                    -- Tạo lực đẩy dựa trên hướng di chuyển hiện tại của họ
-                    local bv = Instance.new("BodyVelocity")
-                    bv.Name = "TrollVelocity"
-                    bv.MaxForce = Vector3.new(1e5, 0, 1e5) -- Chỉ đẩy theo trục ngang mặt đất
-                    
-                    if humanoid.MoveDirection.Magnitude > 0 then
-                        -- Nếu họ đang đi, buff cho họ lao đi như tên bắn
-                        bv.Velocity = humanoid.MoveDirection * targetSpeed
-                    else
-                        -- Nếu targetSpeed = 0 và họ đang đứng im, ghim chặt không cho họ đi
-                        if targetSpeed == 0 then
-                            bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
-                            bv.Velocity = Vector3.new(0, 0, 0)
-                        end
-                    end
-                    
-                    bv.Parent = hrp
-                else
-                    break
-                end
-                task.wait(0.1) -- Cập nhật mỗi 0.1 giây
-            end
-            
-            -- Dọn dẹp sau khi hết 5 giây troll
-            local char = targetPlayer.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                local oldV = hrp:FindFirstChild("TrollVelocity")
-                if oldV then oldV:Destroy() end
-            end
-            SpeedInput.PlaceholderText = "Hết thời gian troll!"
-        end)
+-- Chạy cập nhật danh sách ngay khi mở script lần đầu
+RefreshPlayerList()
+
+-- =======================================================
+-- SỰ KIỆN CLICK NÚT KÍCH HOẠT (NƠI BẠN BỎ CODE TROLL VÀO)
+-- =======================================================
+
+ActionButton.MouseButton1Click:Connect(function()
+    if not selectedPlayer then
+        ActionButton.Text = "Vui lòng chọn 1 người trước!"
+        task.wait(1.5)
+        ActionButton.Text = "KÍCH HOẠT SCRIPT"
+        return
+    end
+    
+    local textContent = ContentInput.Text
+    if textContent == "" then
+        ActionButton.Text = "Vui lòng nhập nội dung!"
+        task.wait(1.5)
+        ActionButton.Text = "KÍCH HOẠT $\rightarrow$ " .. selectedPlayer.DisplayName
+        return
+    end
+    
+    -------------------------------------------------------
+    -- [ĐOẠN TROLL]: Hiện bong bóng chat giả trên đầu mục tiêu
+    -------------------------------------------------------
+    local char = selectedPlayer.Character
+    local head = char and char:FindFirstChild("Head")
+    
+    if head then
+        -- Tạo bảng Billboard trên đầu mục tiêu để hiện chữ giả
+        local bGui = Instance.new("BillboardGui", head)
+        bGui.Size = UDim2.new(0, 200, 0, 50)
+        bGui.StudsOffset = Vector3.new(0, 3, 0)
         
-        SpeedInput.Text = ""
+        local tLabel = Instance.new("TextLabel", bGui)
+        tLabel.Size = UDim2.new(1, 0, 1, 0)
+        tLabel.Text = textContent -- Lấy nội dung bạn vừa gõ ở ô điền vào đây
+        tLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+        tLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+        tLabel.BackgroundTransparency = 0.3
+        tLabel.TextSize = 14
+        tLabel.Font = Enum.Font.SourceSansBold
+        
+        local labelCorner = Instance.new("UICorner", tLabel)
+        labelCorner.CornerRadius = UDim.new(0, 6)
+        
+        -- Báo hiệu kích hoạt thành công trên nút bấm
+        ActionButton.Text = "ĐÃ TROLL XONG!"
+        ContentInput.Text = "" -- Xóa chữ trong ô nhập sau khi dùng
+        
+        task.wait(3) -- Bong bóng tồn tại 3 giây rồi biến mất
+        bGui:Destroy()
+        
+        -- Trả tên nút bấm về trạng thái cũ
+        if selectedPlayer then
+            ActionButton.Text = "KÍCH HOẠT $\rightarrow$ " .. selectedPlayer.DisplayName
+        else
+            ActionButton.Text = "KÍCH HOẠT SCRIPT"
+        end
+    else
+        ActionButton.Text = "Mục tiêu không có Character!"
+        task.wait(1.5)
+        ActionButton.Text = "KÍCH HOẠT $\rightarrow$ " .. selectedPlayer.DisplayName
     end
 end)
 
