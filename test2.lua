@@ -117,6 +117,8 @@ NameInput.FocusLost:Connect(function(enterPressed)
                     if targetHrp and myHrp then
                         -- Ghim liên tục mục tiêu cách bạn 3 studs về phía trước mặt
                         targetHrp.CFrame = myHrp.CFrame * CFrame.new(0, 0, -3)
+                        targetHrp.Velocity = Vector3.new(0, 0, 0)
+                        targetHrp.RotVelocity = Vector3.new(0, 0, 0) -- Xóa luôn lực xoay
                     else
                         break -- Nếu họ thoát game hoặc chết thì dừng vòng lặp
                     end
