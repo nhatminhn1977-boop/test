@@ -7,77 +7,136 @@
  Y888P  ~Y8888P' Y888888P      888888D      Y88888P ~Y8888P' YP   YP  CONVERTER 
 ]=]
 
-local G2L = {};
+local G2L = {}
 
 -- 1. Khởi tạo ScreenGui
 G2L["1"] = Instance.new("ScreenGui")
-G2L["1"].Name = "RealChatFeeder"
+G2L["1"].Name = "FlyMenuSystem"
 G2L["1"].ResetOnSpawn = false
 G2L["1"].Parent = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 
--- 2. Khởi tạo TextBox
-G2L["2"] = Instance.new("TextBox", G2L["1"])
-G2L["2"].Name = "ChatInput"
-G2L["2"].Size = UDim2.new(0, 250, 0, 45)
-G2L["2"].Position = UDim2.new(0.5, -125, 0.8, 0)
-G2L["2"].BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-G2L["2"].TextColor3 = Color3.fromRGB(255, 255, 255)
-G2L["2"].PlaceholderText = "Nhập nội dung muốn CHAT..."
-G2L["2"].PlaceholderColor3 = Color3.fromRGB(150, 150, 150)
-G2L["2"].Text = ""
-G2L["2"].TextSize = 15
-G2L["2"].Font = Enum.Font.SourceSansSemibold
-G2L["2"].BorderSizePixel = 0
-G2L["2"].ClearTextOnFocus = true
+-- 2. Tạo Frame chính (Bảng menu bo góc)
+local MainFrame = Instance.new("Frame", G2L["1"])
+MainFrame.Size = UDim2.new(0, 200, 0, 100)
+MainFrame.Position = UDim2.new(0.1, 0, 0.4, 0) -- Nằm bên cạnh trái màn hình cho đỡ vướng
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.BorderSizePixel = 0
+MainFrame.Active = true
+MainFrame.Draggable = true -- Bạn có thể lấy chuột kéo menu này đi khắp màn hình
 
--- Bo góc & Viền
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 8)
-UICorner.Parent = G2L["2"]
+local MainCorner = Instance.new("UICorner", MainFrame)
+MainCorner.CornerRadius = UDim.new(0, 10)
 
-local UIStroke = Instance.new("UIStroke")
-UIStroke.Color = Color3.fromRGB(0, 170, 255)
-UIStroke.Thickness = 1.5
-UIStroke.Parent = G2L["2"]
+-- Tiêu đề Menu
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundTransparency = 1
+Title.Text = "FLY MENU"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 14
+Title.Font = Enum.Font.SourceSansBold
+
+-- 3. Nút bấm Bật/Tắt Bay (Bo góc xịn sò)
+local FlyButton = Instance.new("TextButton", MainFrame)
+FlyButton.Size = UDim2.new(0, 160, 0, 45)
+FlyButton.Position = UDim2.new(0.5, -80, 0.5, -10)
+FlyButton.BackgroundColor3 = Color3.fromRGB(219, 68, 85) -- Mặc định màu đỏ (Tắt)
+FlyButton.Text = "Fly: OFF"
+FlyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+FlyButton.TextSize = 16
+FlyButton.Font = Enum.Font.SourceSansSemibold
+FlyButton.BorderSizePixel = 0
+
+local ButtonCorner = Instance.new("UICorner", FlyButton)
+ButtonCorner.CornerRadius = UDim.new(0, 8)
 
 -- =======================================================
--- XỬ LÝ SỰ KIỆN: GỬI TIN NHẮN VÀO HỆ THỐNG CHAT THẬT
+-- LẬP TRÌNH TÍNH NĂNG BAY (FLY SCRIPT)
 -- =======================================================
 
-local TextChatService = game:GetService("TextChatService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
--- Hàm xử lý gửi chat
-local function sendChatMessage(message)
-    -- Hướng xử lý 1: Dành cho các game đời mới sử dụng TextChatService
-    if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
-        local textChannel = TextChatService.TextChannels:FindFirstChild("RBXGeneral")
-        if textChannel then
-            textChannel:SendAsync(message)
-        end
-    else
-        -- Hướng xử lý 2: Dành cho các game đời cũ sử dụng LegacyChatService (Dùng DefaultChatSystemChatEvents)
-        local chatEvents = ReplicatedStorage:FindFirstChild("DefaultChatSystemChatEvents")
-        if chatEvents then
-            local sayMessageRequest = chatEvents:FindFirstChild("SayMessageRequest")
-            if sayMessageRequest and sayMessageRequest:IsA("RemoteEvent") then
-                sayMessageRequest:FireServer(message, "All")
+local flying = false
+local speed = 50 -- Tốc độ bay (bạn có thể chỉnh cao hơn nếu muốn bay nhanh)
+local bVelocity, bGyro
+local connection
+
+-- Hàm xử lý bắt đầu bay
+local function startFly()
+    local character = LocalPlayer.Character
+    local rootPart = character and character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    
+    if not rootPart or not humanoid then return end
+    
+    -- Thao túng vật lý để nhân vật không bị rơi rơi xuống
+    bVelocity = Instance.new("BodyVelocity")
+    bVelocity.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+    bVelocity.Velocity = Vector3.new(0, 0, 0)
+    bVelocity.Parent = rootPart
+    
+    bGyro = Instance.new("BodyGyro")
+    bGyro.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
+    bGyro.CFrame = rootPart.CFrame
+    bGyro.Parent = rootPart
+    
+    humanoid.PlatformStand = true -- Đưa nhân vật vào trạng thái thả lỏng (không chạy nền đất)
+
+    -- Cập nhật hướng bay liên tục theo Camera bằng RunService
+    connection = RunService.RenderStepped:Connect(function()
+        if flying and rootPart and humanoid then
+            -- Nhận diện hướng di chuyển từ bàn phím di chuyển mặc định của game
+            local moveDirection = humanoid.MoveDirection
+            
+            if moveDirection.Magnitude > 0 then
+                -- Bay theo hướng camera đang nhìn
+                bVelocity.Velocity = Camera.CFrame:VectorToWorldSpace(Vector3.new(moveDirection.X, 0, moveDirection.Z * 1.5)) * speed
+            else
+                -- Đứng im trên không nếu không bấm nút di chuyển
+                bVelocity.Velocity = Vector3.new(0, 0, 0)
             end
+            
+            -- Giữ nhân vật luôn thẳng đứng theo hướng camera
+            bGyro.CFrame = Camera.CFrame
         end
+    end)
+end
+
+-- Hàm xử lý dừng bay
+local function stopFly()
+    flying = false
+    if connection then connection:Disconnect() end
+    if bVelocity then bVelocity:Destroy() end
+    if bGyro then bGyro:Destroy() end
+    
+    local character = LocalPlayer.Character
+    local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        humanoid.PlatformStand = false -- Trả nhân vật về trạng thái đi bộ bình thường
     end
 end
 
--- Lắng nghe khi bấm Enter
-G2L["2"].FocusLost:Connect(function(enterPressed)
-    if enterPressed and G2L["2"].Text ~= "" then
-        local message = G2L["2"].Text
-        
-        -- Gọi hàm gửi tin nhắn thật
-        sendChatMessage(message)
-        
-        -- Xóa chữ trong ô nhập sau khi đã chat xong
-        G2L["2"].Text = ""
+-- Sự kiện Click nút UI
+FlyButton.MouseButton1Click:Connect(function()
+    flying = not flying
+    
+    if flying then
+        FlyButton.Text = "Fly: ON"
+        FlyButton.BackgroundColor3 = Color3.fromRGB(46, 204, 113) -- Đổi sang màu xanh lá
+        startFly()
+    else
+        FlyButton.Text = "Fly: OFF"
+        FlyButton.BackgroundColor3 = Color3.fromRGB(219, 68, 85) -- Trả về màu đỏ
+        stopFly()
     end
 end)
 
-return G2L["1"];
+-- Tự động ngắt bay nếu nhân vật bị reset/chết
+LocalPlayer.CharacterRemoving:Connect(function()
+    stopFly()
+end)
+
+return G2L["1"]
