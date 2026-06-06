@@ -13,15 +13,15 @@ local LocalPlayer = Players.LocalPlayer
 
 -- 1. Khởi tạo ScreenGui
 G2L["1"] = Instance.new("ScreenGui")
-G2L["1"].Name = "AdvancedTrollHub"
+G2L["1"].Name = "AdvancedTrollHubWhite"
 G2L["1"].ResetOnSpawn = false
 G2L["1"].Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- 2. Tạo Frame chính (Menu bo góc xịn)
+-- 2. Tạo Frame chính (Nền TRẮNG tinh tế)
 local MainFrame = Instance.new("Frame", G2L["1"])
 MainFrame.Size = UDim2.new(0, 280, 0, 360)
 MainFrame.Position = UDim2.new(0.4, 0, 0.25, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- Nền trắng chủ đạo
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
 MainFrame.Draggable = true 
@@ -29,41 +29,49 @@ MainFrame.Draggable = true
 local MainCorner = Instance.new("UICorner", MainFrame)
 MainCorner.CornerRadius = UDim.new(0, 12)
 
--- Tiêu đề Menu
+-- Thêm viền đổ bóng nhẹ cho sang trọng
+local MainStroke = Instance.new("UIStroke", MainFrame)
+MainStroke.Color = Color3.fromRGB(220, 220, 220)
+MainStroke.Thickness = 1.5
+
+-- Tiêu đề Menu (Chữ tối màu trên nền trắng)
 local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
 Title.Text = "🎯 PLAYER TARGET HUB 🎯"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextColor3 = Color3.fromRGB(40, 40, 40) -- Chữ xám đen cứng cáp
 Title.TextSize = 14
 Title.Font = Enum.Font.SourceSansBold
 
--- 3. KHUNG CUỘN DANH SÁCH NGƯỜI CHƠI (ScrollingFrame)
+-- 3. KHUNG CUỘN DANH SÁCH (Màu xám siêu nhạt)
 local PlayerListFrame = Instance.new("ScrollingFrame", MainFrame)
 PlayerListFrame.Size = UDim2.new(0, 240, 0, 150)
 PlayerListFrame.Position = UDim2.new(0.5, -120, 0, 45)
-PlayerListFrame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+PlayerListFrame.BackgroundColor3 = Color3.fromRGB(245, 245, 245) -- Nền xám nhạt sạch sẽ
 PlayerListFrame.BorderSizePixel = 0
-PlayerListFrame.CanvasSize = UDim2.new(0, 0, 0, 0) -- Tự động co giãn theo số lượng người
-PlayerListFrame.ScrollBarThickness = 6
-PlayerListFrame.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 100)
+PlayerListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+PlayerListFrame.ScrollBarThickness = 4
+PlayerListFrame.ScrollBarImageColor3 = Color3.fromRGB(200, 200, 200)
 
 local ListCorner = Instance.new("UICorner", PlayerListFrame)
 ListCorner.CornerRadius = UDim.new(0, 8)
 
--- Layout để các nút tên người chơi tự động xếp thẳng hàng xuống dưới
+local ListStroke = Instance.new("UIStroke", PlayerListFrame)
+ListStroke.Color = Color3.fromRGB(230, 230, 230)
+ListStroke.Thickness = 1
+
 local UIListLayout = Instance.new("UIListLayout", PlayerListFrame)
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Padding = UDim.new(0, 4)
 
--- 4. KHUNG ĐIỀN NỘI DUNG (TextBox)
+-- 4. KHUNG ĐIỀN NỘI DUNG (TextBox nền xám trắng)
 local ContentInput = Instance.new("TextBox", MainFrame)
 ContentInput.Size = UDim2.new(0, 240, 0, 45)
 ContentInput.Position = UDim2.new(0.5, -120, 0, 210)
-ContentInput.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-ContentInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+ContentInput.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
+ContentInput.TextColor3 = Color3.fromRGB(50, 50, 50)
 ContentInput.PlaceholderText = "Nhập nội dung muốn troll tại đây..."
-ContentInput.PlaceholderColor3 = Color3.fromRGB(140, 140, 140)
+ContentInput.PlaceholderColor3 = Color3.fromRGB(160, 160, 160)
 ContentInput.Text = ""
 ContentInput.TextSize = 13
 ContentInput.Font = Enum.Font.SourceSansSemibold
@@ -73,11 +81,15 @@ ContentInput.ClearTextOnFocus = false
 local InputCorner = Instance.new("UICorner", ContentInput)
 InputCorner.CornerRadius = UDim.new(0, 8)
 
--- 5. NÚT KÍCH HOẠT (TextButton)
+local InputStroke = Instance.new("UIStroke", ContentInput)
+InputStroke.Color = Color3.fromRGB(230, 230, 230)
+InputStroke.Thickness = 1
+
+-- 5. NÚT KÍCH HOẠT (Màu tím hoàng gia nổi bật trên nền trắng)
 local ActionButton = Instance.new("TextButton", MainFrame)
 ActionButton.Size = UDim2.new(0, 240, 0, 45)
 ActionButton.Position = UDim2.new(0.5, -120, 0, 270)
-ActionButton.BackgroundColor3 = Color3.fromRGB(142, 68, 173) -- Màu tím hoàng gia quyền lực
+ActionButton.BackgroundColor3 = Color3.fromRGB(142, 68, 173) -- Giữ màu tím để tạo điểm nhấn
 ActionButton.Text = "KÍCH HOẠT SCRIPT"
 ActionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ActionButton.TextSize = 15
@@ -91,49 +103,50 @@ ButtonCorner.CornerRadius = UDim.new(0, 8)
 -- HỆ THỐNG XỬ LÝ LOGIC UI VÀ TỰ ĐỘNG CẬP NHẬT DANH SÁCH
 -- =======================================================
 
-local selectedPlayer = nil -- Biến lưu trữ người chơi đang được chọn
+local selectedPlayer = nil 
 
--- Hàm cập nhật và vẽ lại toàn bộ danh sách người chơi
 local function RefreshPlayerList()
-    -- Xóa các nút cũ trước (trừ cái UIListLayout)
     for _, child in ipairs(PlayerListFrame:GetChildren()) do
-        if child:IsA("TextButton") then
-            child:Destroy()
-        end
+        if child:IsA("TextButton") then child:Destroy() end
     end
     
-    -- Duyệt qua tất cả người chơi trong phòng để tạo nút bấm
     for _, p in ipairs(Players:GetPlayers()) do
         local pButton = Instance.new("TextButton", PlayerListFrame)
-        pButton.Size = UDim2.new(1, -8, 0, 30) -- Rộng fit khung cuộn, cao 30px
-        pButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        pButton.Text = p.DisplayName .. " (@" .. p.Name .. ")"
-        pButton.TextColor3 = Color3.fromRGB(230, 230, 230)
+        pButton.Size = UDim2.new(1, -8, 0, 32)
+        pButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- Nút mặc định màu trắng tinh
+        pButton.Text = "  " .. p.DisplayName .. " (@" .. p.Name .. ")"
+        pButton.TextColor3 = Color3.fromRGB(80, 80, 80) -- Chữ xám vừa phải
+        pButton.TextXAlignment = Enum.TextXAlignment.Left -- Căn lề trái cho đẹp
         pButton.TextSize = 12
-        pButton.Font = Enum.Font.SourceSans
+        pButton.Font = Enum.Font.SourceSansSemibold
         pButton.BorderSizePixel = 0
         
         local bCorner = Instance.new("UICorner", pButton)
-        bCorner.CornerRadius = UDim.new(0, 4)
+        bCorner.CornerRadius = UDim.new(0, 6)
         
-        -- Sự kiện khi click chọn người chơi này trong danh sách
+        local bStroke = Instance.new("UIStroke", pButton)
+        bStroke.Color = Color3.fromRGB(235, 235, 235)
+        bStroke.Thickness = 1
+        
         pButton.MouseButton1Click:Connect(function()
             selectedPlayer = p
-            -- Đổi màu tất cả các nút khác về màu tối mặc định
+            -- Trả toàn bộ các nút khác về màu trắng viền xám nhạt
             for _, btn in ipairs(PlayerListFrame:GetChildren()) do
-                if btn:IsA("TextButton") then btn.BackgroundColor3 = Color3.fromRGB(50, 50, 50) end
+                if btn:IsA("TextButton") then 
+                    btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
+                    btn.TextColor3 = Color3.fromRGB(80, 80, 80)
+                end
             end
-            -- Đổi nút được chọn sang màu xanh dương để đánh dấu
-            pButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-            ActionButton.Text = "KÍCH HOẠT $\rightarrow$ " .. p.DisplayName
+            -- Nút được chọn sẽ đổi sang màu xanh dương rực rỡ, chữ trắng
+            pButton.BackgroundColor3 = Color3.fromRGB(0, 122, 255)
+            pButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+            ActionButton.Text = "KÍCH HOẠT -> " .. p.DisplayName
         end)
     end
     
-    -- Tự động tính toán lại chiều dài thanh cuộn dựa trên số lượng người chơi
     PlayerListFrame.CanvasSize = UDim2.new(0, 0, 0, UIListLayout.AbsoluteContentSize.Y)
 end
 
--- Tự động vẽ lại danh sách khi có người vào hoặc rời server
 Players.PlayerAdded:Connect(RefreshPlayerList)
 Players.PlayerRemoving:Connect(function(p)
     if selectedPlayer == p then
@@ -143,11 +156,10 @@ Players.PlayerRemoving:Connect(function(p)
     RefreshPlayerList()
 end)
 
--- Chạy cập nhật danh sách ngay khi mở script lần đầu
 RefreshPlayerList()
 
 -- =======================================================
--- SỰ KIỆN CLICK NÚT KÍCH HOẠT (NƠI BẠN BỎ CODE TROLL VÀO)
+-- SỰ KIỆN CLICK NÚT KÍCH HOẠT
 -- =======================================================
 
 ActionButton.MouseButton1Click:Connect(function()
@@ -162,51 +174,49 @@ ActionButton.MouseButton1Click:Connect(function()
     if textContent == "" then
         ActionButton.Text = "Vui lòng nhập nội dung!"
         task.wait(1.5)
-        ActionButton.Text = "KÍCH HOẠT $\rightarrow$ " .. selectedPlayer.DisplayName
+        ActionButton.Text = "KÍCH HOẠT -> " .. selectedPlayer.DisplayName
         return
     end
     
-    -------------------------------------------------------
-    -- [ĐOẠN TROLL]: Hiện bong bóng chat giả trên đầu mục tiêu
-    -------------------------------------------------------
     local char = selectedPlayer.Character
     local head = char and char:FindFirstChild("Head")
     
     if head then
-        -- Tạo bảng Billboard trên đầu mục tiêu để hiện chữ giả
         local bGui = Instance.new("BillboardGui", head)
         bGui.Size = UDim2.new(0, 200, 0, 50)
         bGui.StudsOffset = Vector3.new(0, 3, 0)
         
         local tLabel = Instance.new("TextLabel", bGui)
         tLabel.Size = UDim2.new(1, 0, 1, 0)
-        tLabel.Text = textContent -- Lấy nội dung bạn vừa gõ ở ô điền vào đây
-        tLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-        tLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-        tLabel.BackgroundTransparency = 0.3
+        tLabel.Text = textContent
+        tLabel.TextColor3 = Color3.fromRGB(40, 40, 40) -- Chữ tối màu trên bong bóng chat giả
+        tLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255) -- Bong bóng chat màu trắng đồng bộ luôn
+        tLabel.BackgroundTransparency = 0.1
         tLabel.TextSize = 14
         tLabel.Font = Enum.Font.SourceSansBold
         
         local labelCorner = Instance.new("UICorner", tLabel)
         labelCorner.CornerRadius = UDim.new(0, 6)
         
-        -- Báo hiệu kích hoạt thành công trên nút bấm
-        ActionButton.Text = "ĐÃ TROLL XONG!"
-        ContentInput.Text = "" -- Xóa chữ trong ô nhập sau khi dùng
+        local labelStroke = Instance.new("UIStroke", tLabel)
+        labelStroke.Color = Color3.fromRGB(200, 200, 200)
+        labelStroke.Thickness = 1
         
-        task.wait(3) -- Bong bóng tồn tại 3 giây rồi biến mất
+        ActionButton.Text = "ĐÃ TROLL XONG!"
+        ContentInput.Text = "" 
+        
+        task.wait(3)
         bGui:Destroy()
         
-        -- Trả tên nút bấm về trạng thái cũ
         if selectedPlayer then
-            ActionButton.Text = "KÍCH HOẠT $\rightarrow$ " .. selectedPlayer.DisplayName
+            ActionButton.Text = "KÍCH HOẠT -> " .. selectedPlayer.DisplayName
         else
             ActionButton.Text = "KÍCH HOẠT SCRIPT"
         end
     else
         ActionButton.Text = "Mục tiêu không có Character!"
         task.wait(1.5)
-        ActionButton.Text = "KÍCH HOẠT $\rightarrow$ " .. selectedPlayer.DisplayName
+        ActionButton.Text = "KÍCH HOẠT -> " .. selectedPlayer.DisplayName
     end
 end)
 
