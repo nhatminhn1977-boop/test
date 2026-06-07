@@ -12,13 +12,12 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- 1. Khởi tạo ScreenGui
+-- 1. Khởi tạo ScreenGui nền trắng
 G2L["1"] = Instance.new("ScreenGui")
-G2L["1"].Name = "PushPlayerHub"
+G2L["1"].Name = "SpinPushPlayerHub"
 G2L["1"].ResetOnSpawn = false
 G2L["1"].Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- 2. Tạo Frame chính (Nền Trắng Tối Giản)
 local MainFrame = Instance.new("Frame", G2L["1"])
 MainFrame.Size = UDim2.new(0, 280, 0, 360)
 MainFrame.Position = UDim2.new(0.4, 0, 0.25, 0)
@@ -38,12 +37,12 @@ MainStroke.Thickness = 1.5
 local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1, 0, 0, 40)
 Title.BackgroundTransparency = 1
-Title.Text = "💨 PUSH PLAYER TOOL 💨"
+Title.Text = "🌪️ SPIN PUSH TOOL 🌪️"
 Title.TextColor3 = Color3.fromRGB(40, 40, 40)
 Title.TextSize = 14
 Title.Font = Enum.Font.SourceSansBold
 
--- 3. KHUNG CUỘN DANH SÁCH NGƯỜI CHƠI
+-- 3. Danh sách người chơi
 local PlayerListFrame = Instance.new("ScrollingFrame", MainFrame)
 PlayerListFrame.Size = UDim2.new(0, 240, 0, 140)
 PlayerListFrame.Position = UDim2.new(0.5, -120, 0, 45)
@@ -60,15 +59,14 @@ local UIListLayout = Instance.new("UIListLayout", PlayerListFrame)
 UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
 UIListLayout.Padding = UDim.new(0, 4)
 
--- 4. KHUNG NHẬP LỰC ĐẨY (Lấy lực đẩy thay vì nội dung chat)
+-- 4. Ô điền lực đẩy
 local PushPowerInput = Instance.new("TextBox", MainFrame)
 PushPowerInput.Size = UDim2.new(0, 240, 0, 45)
 PushPowerInput.Position = UDim2.new(0.5, -120, 0, 200)
 PushPowerInput.BackgroundColor3 = Color3.fromRGB(245, 245, 245)
 PushPowerInput.TextColor3 = Color3.fromRGB(50, 50, 50)
-PushPowerInput.PlaceholderText = "Nhập lực đẩy (Ví dụ: 80, 150)..."
-PushPowerInput.PlaceholderColor3 = Color3.fromRGB(160, 160, 160)
-PushPowerInput.Text = "100" -- Để mặc định là 100 cho tiện
+PushPowerInput.PlaceholderText = "Nhập lực đẩy văng..."
+PushPowerInput.Text = "120" -- Tăng nhẹ mặc định lên 120 cho bay gắt
 PushPowerInput.TextSize = 13
 PushPowerInput.Font = Enum.Font.SourceSansSemibold
 PushPowerInput.BorderSizePixel = 0
@@ -76,34 +74,32 @@ PushPowerInput.BorderSizePixel = 0
 local InputCorner = Instance.new("UICorner", PushPowerInput)
 InputCorner.CornerRadius = UDim.new(0, 8)
 
--- 5. NÚT KÍCH HOẠT ĐẨY
+-- 5. Nút kích hoạt xoay đẩy
 local ActionButton = Instance.new("TextButton", MainFrame)
 ActionButton.Size = UDim2.new(0, 240, 0, 45)
 ActionButton.Position = UDim2.new(0.5, -120, 0, 260)
-ActionButton.BackgroundColor3 = Color3.fromRGB(230, 126, 34) -- Đổi sang màu cam năng động
-ActionButton.Text = "BẮT ĐẦU ĐẨY"
+ActionButton.BackgroundColor3 = Color3.fromRGB(231, 76, 60) -- Màu đỏ bão tố
+ActionButton.Text = "KÍCH HOẠT SPIN-PUSH"
 ActionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ActionButton.TextSize = 15
+ActionButton.TextSize = 14
 ActionButton.Font = Enum.Font.SourceSansBold
 ActionButton.BorderSizePixel = 0
 
 local ButtonCorner = Instance.new("UICorner", ActionButton)
 ButtonCorner.CornerRadius = UDim.new(0, 8)
 
--- Trạng thái điều khiển
 local selectedPlayer = nil 
 local isPushing = false
 
 -- =======================================================
--- HỆ THỐNG CẬP NHẬT DANH SÁCH NGƯỜI CHƠI
+-- TỰ ĐỘNG CẬP NHẬT DANH SÁCH NGƯỜI CHƠI
 -- =======================================================
 local function RefreshPlayerList()
     for _, child in ipairs(PlayerListFrame:GetChildren()) do
         if child:IsA("TextButton") then child:Destroy() end
     end
-    
     for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer then -- Không hiện chính mình
+        if p ~= LocalPlayer then
             local pButton = Instance.new("TextButton", PlayerListFrame)
             pButton.Size = UDim2.new(1, -8, 0, 32)
             pButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
@@ -112,26 +108,20 @@ local function RefreshPlayerList()
             pButton.TextXAlignment = Enum.TextXAlignment.Left
             pButton.TextSize = 12
             pButton.Font = Enum.Font.SourceSansSemibold
-            pButton.BorderSizePixel = 0
             
             local bCorner = Instance.new("UICorner", pButton)
             bCorner.CornerRadius = UDim.new(0, 6)
-            
             local bStroke = Instance.new("UIStroke", pButton)
             bStroke.Color = Color3.fromRGB(235, 235, 235)
-            bStroke.Thickness = 1
             
             pButton.MouseButton1Click:Connect(function()
                 selectedPlayer = p
                 for _, btn in ipairs(PlayerListFrame:GetChildren()) do
-                    if btn:IsA("TextButton") then 
-                        btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255) 
-                        btn.TextColor3 = Color3.fromRGB(80, 80, 80)
-                    end
+                    if btn:IsA("TextButton") then btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255) btn.TextColor3 = Color3.fromRGB(80, 80, 80) end
                 end
-                pButton.BackgroundColor3 = Color3.fromRGB(230, 126, 34)
+                pButton.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
                 pButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-                ActionButton.Text = "ĐẨY MỤC TIÊU -> " .. p.DisplayName
+                ActionButton.Text = "HÚC XOÁY NGƯỜI -> " .. p.DisplayName
             end)
         end
     end
@@ -139,35 +129,32 @@ local function RefreshPlayerList()
 end
 
 Players.PlayerAdded:Connect(RefreshPlayerList)
-Players.PlayerRemoving:Connect(function(p)
-    if selectedPlayer == p then selectedPlayer = nil ActionButton.Text = "BẮT ĐẦU ĐẨY" end
-    RefreshPlayerList()
-end)
+Players.PlayerRemoving:Connect(function(p) if selectedPlayer == p then selectedPlayer = nil ActionButton.Text = "KÍCH HOẠT SPIN-PUSH" end RefreshPlayerList() end)
 RefreshPlayerList()
 
 -- =======================================================
--- LOGIC HÚC VÀ ĐẨY VẬT LÝ (DÙNG ĐỘNG LỰC HỌC)
+-- LOGIC LAO ĐẨY KẾT HỢP XOAY THÂN (KHÔNG QUAY CAMERA)
 -- =======================================================
 
 ActionButton.MouseButton1Click:Connect(function()
     if isPushing then
         isPushing = false
-        ActionButton.Text = "BẮT ĐẦU ĐẨY"
-        ActionButton.BackgroundColor3 = Color3.fromRGB(230, 126, 34)
+        ActionButton.Text = "KÍCH HOẠT SPIN-PUSH"
+        ActionButton.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
         return
     end
 
     if not selectedPlayer then
-        ActionButton.Text = "Vui lòng chọn mục tiêu trước!"
+        ActionButton.Text = "Vui lòng chọn mục tiêu!"
         task.wait(1.5)
-        ActionButton.Text = "BẮT ĐẦU ĐẨY"
+        ActionButton.Text = "KÍCH HOẠT SPIN-PUSH"
         return
     end
 
-    local power = tonumber(PushPowerInput.Text) or 100
+    local power = tonumber(PushPowerInput.Text) or 120
     isPushing = true
-    ActionButton.Text = "ĐANG ĐẦY (ẤN ĐỂ DỪNG)"
-    ActionButton.BackgroundColor3 = Color3.fromRGB(39, 174, 96) -- Đổi sang màu xanh khi đang dí
+    ActionButton.Text = "ĐANG QUÉT (ẤN ĐỂ DỪNG)"
+    ActionButton.BackgroundColor3 = Color3.fromRGB(46, 204, 113) -- Màu xanh khi đang hoạt động
 
     task.spawn(function()
         local connection
@@ -184,34 +171,49 @@ ActionButton.MouseButton1Click:Connect(function()
             local tarHrp = tarChar and tarChar:FindFirstChild("HumanoidRootPart")
 
             if myHrp and tarHrp then
-                -- Tính toán hướng lao tới mục tiêu
+                -- 1. XOAY THÂN HÌNH SIÊU TỐC: Chỉ đổi RotVelocity của nhân vật để va chạm liên tục
+                -- Hoàn toàn không đụng vào Camera nên màn hình của bạn vẫn đứng im bình thường!
+                myHrp.RotVelocity = Vector3.new(0, 10000, 0) 
+
+                -- Vô hiệu hóa va chạm tạm thời giữa các chi của bạn để không bị kẹt khi quay sát mục tiêu
+                for _, part in ipairs(myChar:GetChildren()) do
+                    if part:IsA("BasePart") then
+                        part.CanCollide = false
+                    end
+                end
+
+                -- 2. ĐẨY VẬN TỐC LAO ĐẾN: Tính toán hướng di chuyển dính chặt vào người đó
                 local direction = (tarHrp.Position - myHrp.Position).Unit
-                
-                -- Bơm gia tốc cực mạnh vào nhân vật của mình để tạo lực va chạm lớn
                 myHrp.Velocity = direction * power
                 
-                -- Đưa CFrame áp sát mục tiêu liên tục để tạo cú hích dồn dập
+                -- Khóa CFrame áp sát liên tục vào tâm của mục tiêu
                 myHrp.CFrame = CFrame.new(myHrp.Position, tarHrp.Position)
             else
                 isPushing = false
             end
         end)
         
-        -- Chờ cho tới khi dừng đẩy để tắt hẳn kết nối vòng lặp vật lý
         while isPushing do task.wait(0.1) end
         if connection then connection:Disconnect() end
         
-        -- Trả vật lý nhân vật về trạng thái đứng im bình thường
+        -- DỌN DẸP: Khi tắt, đưa nhân vật về trạng thái đứng im bình thường
         local myChar = LocalPlayer.Character
         local myHrp = myChar and myChar:FindFirstChild("HumanoidRootPart")
-        if myHrp then myHrp.Velocity = Vector3.new(0, 0, 0) end
+        if myHrp then
+            myHrp.RotVelocity = Vector3.new(0, 0, 0)
+            myHrp.Velocity = Vector3.new(0, 0, 0)
+            -- Bật lại va chạm cơ thể
+            for _, part in ipairs(myChar:GetChildren()) do
+                if part:IsA("BasePart") then part.CanCollide = true end
+            end
+        end
         
         if selectedPlayer then
-            ActionButton.Text = "ĐẨY MỤC TIÊU -> " .. selectedPlayer.DisplayName
+            ActionButton.Text = "HÚC XOÁY NGƯỜI -> " .. selectedPlayer.DisplayName
         else
-            ActionButton.Text = "BẮT ĐẦU ĐẨY"
+            ActionButton.Text = "KÍCH HOẠT SPIN-PUSH"
         end
-        ActionButton.BackgroundColor3 = Color3.fromRGB(230, 126, 34)
+        ActionButton.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
     end)
 end)
 
