@@ -5,7 +5,7 @@ local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
-local TRIGGER_DISTANCE = 6 -- Khoảng cách kích hoạt 6 studs
+local TRIGGER_DISTANCE = 10 -- Khoảng cách kích hoạt 6 studs
 local BLOCK_DURATION = 0.3 
 local FORCE_BLOCK_TIME = 0.1 
 
