@@ -1,18 +1,20 @@
--- SCRIPT AUTO BLOCK & AIM V4 (INSTANT DEFENSE - DÀNH CHO EXECUTOR)
+-- SCRIPT AUTO BLOCK & AIM V5 (FORCE 0.1S BLOCK & SHIFT-LOCK BYPASS)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
-local TRIGGER_DISTANCE = 12 -- Khoảng cách kích hoạt (6 studs)
-local BLOCK_DURATION = 0.3 -- Khoảng giữ tối thiểu của một nhịp Block (0.3s)
+local TRIGGER_DISTANCE = 6 -- Khoảng cách kích hoạt (6 studs)
+local BLOCK_DURATION = 0.3 -- Tổng khoảng giữ tối đa của một nhịp Block (0.3s)
+local FORCE_BLOCK_TIME = 0.1 -- Khoảng thời gian KHÓA CHẶT bắt buộc (0.1s)
 
 local isBlocking = false
+local blockStartTime = 0
 local blockEndTime = 0
 local cancelBlockUntil = 0
 
--- Danh sách các phím Bypass để HỦY BLOCK lập tức
+-- Danh sách các phím Bypass để HỦY BLOCK sau khi hết thời gian khóa bắt buộc
 local BYPASS_KEYS = {
     [Enum.KeyCode.One] = true,
     [Enum.KeyCode.Two] = true,
@@ -51,7 +53,7 @@ local function getClosestPlayer()
     return closestPlayer
 end
 
--- LẮNG NGHE BẤM PHÍM BYPASS - NẰM RIÊNG ĐỂ ĐẢM BẢO NGẮT BLOCK LẬP TỨC
+-- LẮNG NGHE BẤM PHÍM BYPASS (CÓ KIỂM TRA ĐIỀU KIỆN KHÓA 0.1S)
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
 
@@ -63,7 +65,13 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     end
 
     if shouldCancel then
-        cancelBlockUntil = os.clock() + 0.35 -- Khóa Auto Block trong 0.35s để ưu tiên hành động
+        -- Nếu đang trong thời gian KHÓA BẮT BUỘC (0.1s đầu), từ chối Bypass hoàn toàn
+        if isBlocking and (os.clock() - blockStartTime < FORCE_BLOCK_TIME) then
+            return
+        end
+
+        -- Nếu đã qua 0.1s, cho phép hủy block bình thường
+        cancelBlockUntil = os.clock() + 0.35
         if isBlocking then
             VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
             isBlocking = false
@@ -71,7 +79,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     end
 end)
 
--- VÒNG LẶP CHÍNH CHẠY THEO KHUNG HÌNH (TỐC ĐỘ PHẢN ỨNG TUYỆT ĐỐI)
+-- VÒNG LẶP CHẠY THEO TỪNG KHUNG HÌNH (HEARTBEAT)
 local Connection
 Connection = RunService.Heartbeat:Connect(function()
     local myChar = LocalPlayer.Character
@@ -84,34 +92,44 @@ Connection = RunService.Heartbeat:Connect(function()
     end
     
     local myHRP = myChar.HumanoidRootPart
-    
-    -- Kiểm tra điều kiện Bypass trước
-    if os.clock() < cancelBlockUntil then return end
-
     local targetPlayer = getClosestPlayer()
+
+    -- Trường hợp đang giữ block bắt buộc (trong 0.1s đầu): BẮT BUỘC giữ góc quay và phím F, bỏ qua mọi lệnh hủy
+    if isBlocking and (os.clock() - blockStartTime < FORCE_BLOCK_TIME) then
+        if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local targetHRP = targetPlayer.Character.HumanoidRootPart
+            local targetPosition = Vector3.new(targetHRP.Position.X, myHRP.Position.Y, targetHRP.Position.Z)
+            myHRP.CFrame = CFrame.lookAt(myHRP.Position, targetPosition)
+        end
+        return
+    end
+
+    -- Nếu đang trong thời gian bị đóng băng sau khi bấm Bypass thành công, tạm thời không bắt địch mới
+    if os.clock() < cancelBlockUntil then return end
 
     -- NẾU THỎA MÃN ĐIỀU KIỆN (Có địch trong tầm 6 studs)
     if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local targetHRP = targetPlayer.Character.HumanoidRootPart
         
-        -- 1. XOAY ROOT NGAY LẬP TỨC (Mỗi khung hình)
+        -- XOAY ROOT BẮT BUỘC (Đè hoàn toàn lên Shift Lock bằng cách gán CFrame liên tục mỗi frame)
         local targetPosition = Vector3.new(targetHRP.Position.X, myHRP.Position.Y, targetHRP.Position.Z)
         myHRP.CFrame = CFrame.lookAt(myHRP.Position, targetPosition)
         
-        -- 2. BLOCK NGAY LẬP TỨC
+        -- KÍCH HOẠT / GIA HẠN BLOCK
         if not isBlocking then
             VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
             isBlocking = true
-            blockEndTime = os.clock() + BLOCK_DURATION -- Đặt mốc thời gian giữ ít nhất 0.3s
+            blockStartTime = os.clock() -- Ghi lại mốc thời gian bắt đầu khóa chặt
+            blockEndTime = os.clock() + BLOCK_DURATION
         else
-            -- Nếu đang trong trạng thái block và đã quá 0.3s, nhưng địch VẪN TRONG TẦM -> Gia hạn thời gian Block tiếp
+            -- Địch vẫn trong tầm và đã hết 0.3s nhịp cũ, tự động nối thêm nhịp mới
             if os.clock() >= blockEndTime then
                 blockEndTime = os.clock() + BLOCK_DURATION
             end
         end
     else
-        -- NẾU KHÔNG ĐỦ ĐIỀU KIỆN (Địch ra ngoài tầm)
-        -- Chỉ nhả Block khi đã giữ ĐỦ 0.3s của nhịp đó
+        -- NẾU ĐỊCH RA KHỎI TẦM
+        -- Chỉ nhả Block khi đã giữ đủ ít nhất 0.3s của nhịp đó
         if isBlocking and os.clock() >= blockEndTime then
             VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
             isBlocking = false
@@ -119,9 +137,9 @@ Connection = RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Thông báo kích hoạt bản V4 Instant Block
+-- Thông báo bản V5 Unstoppable Defense
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Minh AutoBlock V4",
-    Text = "Instant Response & Keep Block Activated!",
+    Title = "Minh AutoBlock V5",
+    Text = "Force 0.1s & Shift-Lock Override Active!",
     Duration = 3
 })
