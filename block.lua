@@ -1,17 +1,18 @@
--- SCRIPT AUTO BLOCK & AIM V3 (DÀNH CHO EXECUTOR)
+-- SCRIPT AUTO BLOCK & AIM V4 (INSTANT DEFENSE - DÀNH CHO EXECUTOR)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local UserInputService = game:GetService("UserInputService")
 
 local LocalPlayer = Players.LocalPlayer
-local TRIGGER_DISTANCE = 15 -- Khoảng cách kích hoạt (6 studs)
-local BLOCK_DURATION = 0.3 -- Thời gian giữ block tối thiểu khi di chuyển
+local TRIGGER_DISTANCE = 6 -- Khoảng cách kích hoạt (6 studs)
+local BLOCK_DURATION = 0.3 -- Khoảng giữ tối thiểu của một nhịp Block (0.3s)
 
 local isBlocking = false
-local cancelBlockUntil = 0 -- Thời gian đóng băng Auto Block để ưu tiên hành động khác
+local blockEndTime = 0
+local cancelBlockUntil = 0
 
--- Danh sách các phím khi bấm sẽ HỦY BLOCK ngay lập tức (Bao gồm skill, di chuyển và nhảy)
+-- Danh sách các phím Bypass để HỦY BLOCK lập tức
 local BYPASS_KEYS = {
     [Enum.KeyCode.One] = true,
     [Enum.KeyCode.Two] = true,
@@ -50,96 +51,77 @@ local function getClosestPlayer()
     return closestPlayer
 end
 
--- Hàm thực hiện lệnh nhả Block ngay lập tức
-local function forceUnblock()
-    if isBlocking then
-        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
-        isBlocking = false
-    end
-end
-
--- Hàm xử lý hành động bấm và giữ phím F
-local function pressBlockKey()
-    if isBlocking or os.clock() < cancelBlockUntil then return end
-    isBlocking = true
-    
-    -- Mô phỏng nhấn giữ phím F
-    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
-    
-    -- Quản lý thời gian nhả block dựa trên trạng thái đứng yên/di chuyển
-    task.spawn(function()
-        local startTime = os.clock()
-        while isBlocking and (os.clock() - startTime) < BLOCK_DURATION do
-            task.wait()
-        end
-        
-        -- Sau 0.3s, kiểm tra xem người chơi có đang ĐỨNG YÊN không
-        local myChar = LocalPlayer.Character
-        if myChar and myChar:FindFirstChild("Humanoid") then
-            local humanoid = myChar.Humanoid
-            -- Nếu đang di chuyển (MoveDirection > 0), tiến hành nhả block theo form cũ
-            if humanoid.MoveDirection.Magnitude > 0 then
-                forceUnblock()
-            else
-                -- Nếu ĐỨNG YÊN: Không làm gì cả (vòng lặp Heartbeat phía dưới sẽ tiếp tục giữ trạng thái block này)
-            end
-        else
-            forceUnblock()
-        end
-    end)
-end
-
--- LẮNG NGHE NÚT BẤM ĐỂ HỦY BLOCK LẬP TỨC (BYPASS)
+-- LẮNG NGHE BẤM PHÍM BYPASS - NẰM RIÊNG ĐỂ ĐẢM BẢO NGẮT BLOCK LẬP TỨC
 UserInputService.InputBegan:Connect(function(input, gpe)
-    if gpe then return end -- Bỏ qua khi gõ chat
+    if gpe then return end
 
     local shouldCancel = false
-
-    -- Kiểm tra Click chuột trái (M1)
     if input.UserInputType == Enum.UserInputType.MouseButton1 then
         shouldCancel = true
-    -- Kiểm tra các phím trong danh sách Bypass (1,2,3,4,R,Q,W,A,D,Space)
     elseif input.UserInputType == Enum.UserInputType.Keyboard and BYPASS_KEYS[input.KeyCode] then
         shouldCancel = true
     end
 
     if shouldCancel then
-        forceUnblock() 
-        cancelBlockUntil = os.clock() + 0.35 -- Tạm dừng Auto Block một chút để hành động mượt mà
+        cancelBlockUntil = os.clock() + 0.35 -- Khóa Auto Block trong 0.35s để ưu tiên hành động
+        if isBlocking then
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+            isBlocking = false
+        end
     end
 end)
 
--- VÒNG LẶP THEO DÕI REAL-TIME (HEARTBEAT)
+-- VÒNG LẶP CHÍNH CHẠY THEO KHUNG HÌNH (TỐC ĐỘ PHẢN ỨNG TUYỆT ĐỐI)
 local Connection
 Connection = RunService.Heartbeat:Connect(function()
     local myChar = LocalPlayer.Character
-    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") or not myChar:FindFirstChild("Humanoid") then 
-        forceUnblock()
+    if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then 
+        if isBlocking then
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+            isBlocking = false
+        end
         return 
     end
     
     local myHRP = myChar.HumanoidRootPart
+    
+    -- Kiểm tra điều kiện Bypass trước
+    if os.clock() < cancelBlockUntil then return end
+
     local targetPlayer = getClosestPlayer()
 
-    -- Nếu có địch trong tầm và không trong trạng thái bị đóng băng bởi phím bấm bypass
-    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") and os.clock() >= cancelBlockUntil then
+    -- NẾU THỎA MÃN ĐIỀU KIỆN (Có địch trong tầm 6 studs)
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local targetHRP = targetPlayer.Character.HumanoidRootPart
         
-        -- Luôn xoay người về phía đối thủ
+        -- 1. XOAY ROOT NGAY LẬP TỨC (Mỗi khung hình)
         local targetPosition = Vector3.new(targetHRP.Position.X, myHRP.Position.Y, targetHRP.Position.Z)
         myHRP.CFrame = CFrame.lookAt(myHRP.Position, targetPosition)
         
-        -- Gọi lệnh Block
-        pressBlockKey()
+        -- 2. BLOCK NGAY LẬP TỨC
+        if not isBlocking then
+            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
+            isBlocking = true
+            blockEndTime = os.clock() + BLOCK_DURATION -- Đặt mốc thời gian giữ ít nhất 0.3s
+        else
+            -- Nếu đang trong trạng thái block và đã quá 0.3s, nhưng địch VẪN TRONG TẦM -> Gia hạn thời gian Block tiếp
+            if os.clock() >= blockEndTime then
+                blockEndTime = os.clock() + BLOCK_DURATION
+            end
+        end
     else
-        -- Nhả block ngay khi đối thủ đi RA NGOÀI TẦM 6 studs hoặc không tìm thấy mục tiêu
-        forceUnblock()
+        -- NẾU KHÔNG ĐỦ ĐIỀU KIỆN (Địch ra ngoài tầm)
+        -- Chỉ nhả Block khi đã giữ ĐỦ 0.3s của nhịp đó
+        if isBlocking and os.clock() >= blockEndTime then
+            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
+            isBlocking = false
+        end
     end
 end)
 
--- Thông báo kích hoạt bản V3 siêu thủ thế
+-- Thông báo kích hoạt bản V4 Instant Block
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "Minh AutoBlock V3",
-    Text = "Chế độ Đứng Yên Thủ Thế đã bật!",
+    Title = "Minh AutoBlock V4",
+    Text = "Instant Response & Keep Block Activated!",
     Duration = 3
 })
