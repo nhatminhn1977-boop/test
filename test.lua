@@ -180,7 +180,7 @@ task.spawn(function()
                                 task.wait(object.HoldDuration)
                                 object:InputHoldEnd()
                                 
-                                task.wait(0.3)
+                                task.wait(0.1)
                             end
                         end
                         
