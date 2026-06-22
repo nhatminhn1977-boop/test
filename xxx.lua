@@ -121,7 +121,7 @@ TeleportBtn.MouseButton1Click:Connect(function()
     else
         -- Báo lỗi nếu không quét được gì
         TeleportBtn.BackgroundColor3 = Color3.fromRGB(231, 76, 60) -- Đỏ
-        TeleportBtn.Text = "No target found!"
+        TeleportBtn.Text = "No target found!1"
         warn("[Script] Không tìm thấy bất kỳ ProximityPrompt nào trong Workspace!")
         
         task.wait(1.2)
