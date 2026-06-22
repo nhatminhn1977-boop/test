@@ -1,21 +1,21 @@
--- Ultimate Fly & Chest Tracker System (v1.4 Auto-Refresh & Distance)
+-- Ultimate Fly & Chest Tracker System (v1.5 Fixed Compatibility)
 
 local G2L = {}
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
 local player = Players.LocalPlayer
 
--- 1. Tự động dọn dẹp tài nguyên cũ để tránh xung đột UI hoặc nặng RAM
+-- Tự động dọn dẹp tài nguyên cũ tránh trùng lặp UI
 local oldGui = player:WaitForChild("PlayerGui"):FindFirstChild("UltimateFlySystemGui")
 if oldGui then oldGui:Destroy() end
-if CoreGui:FindFirstChild("InteractESP_Storage") then CoreGui.InteractESP_Storage:Destroy() end
+local oldStorage = player:WaitForChild("PlayerGui"):FindFirstChild("InteractESP_Storage")
+if oldStorage then oldStorage:Destroy() end
 
--- Kho lưu trữ các phân vùng ESP xuyên tường
+-- Kho lưu trữ ESP đặt an toàn trong PlayerGui để tránh lỗi phân quyền
 local ESP_Storage = Instance.new("Folder")
 ESP_Storage.Name = "InteractESP_Storage"
-ESP_Storage.Parent = CoreGui
+ESP_Storage.Parent = player:WaitForChild("PlayerGui")
 
 -- Các biến trạng thái hệ thống
 local flying = false
@@ -29,7 +29,7 @@ local selectedPrompt = nil
 local selectedButton = nil
 
 -- ====================================================
--- SỬ DỤNG HÀM HỖ TRỢ HOẠT ẢNH & ĐỊNH VỊ
+-- HÀM HỖ TRỢ HOẠT ẢNH & ĐỊNH VỊ KHOẢNG CÁCH
 -- ====================================================
 
 local function playFlyAnim(char, state)
@@ -69,7 +69,7 @@ local function getPromptTarget(prompt)
 end
 
 -- ====================================================
--- THIẾT KẾ KHUNG UI CHÍNH (MAIN SCREEN GUI)
+-- GIAO DIỆN CHÍNH (MAIN GUI)
 -- ====================================================
 
 G2L["1"] = Instance.new("ScreenGui")
@@ -80,105 +80,99 @@ G2L["1"].Parent = player:WaitForChild("PlayerGui")
 local MainFrame = Instance.new("Frame", G2L["1"])
 MainFrame.Size = UDim2.new(0, 340, 0, 460)
 MainFrame.Position = UDim2.new(0.05, 0, 0.3, 0)
-MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)[cite: 2]
+MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18)
 MainFrame.BorderSizePixel = 0
-MainFrame.Active = true[cite: 2]
-MainFrame.Draggable = true [cite: 2]
+MainFrame.Active = true
+MainFrame.Draggable = true 
 
 local MainCorner = Instance.new("UICorner", MainFrame)
-MainCorner.CornerRadius = UDim.new(0, 10)[cite: 2]
+MainCorner.CornerRadius = UDim.new(0, 10)
 local MainStroke = Instance.new("UIStroke", MainFrame)
-MainStroke.Color = Color3.fromRGB(45, 45, 45)[cite: 2]
-MainStroke.Thickness = 1.5[cite: 2]
+MainStroke.Color = Color3.fromRGB(45, 45, 45)
+MainStroke.Thickness = 1.5
 
 local Title = Instance.new("TextLabel", MainFrame)
-Title.Size = UDim2.new(1, -40, 0, 35)[cite: 2]
+Title.Size = UDim2.new(1, -40, 0, 35)
 Title.Position = UDim2.new(0, 12, 0, 0)
-Title.BackgroundTransparency = 1[cite: 2]
+Title.BackgroundTransparency = 1
 Title.Text = "CHEST SNIPER & FLY MANAGER 🏴‍☠️"
-Title.TextColor3 = Color3.fromRGB(240, 240, 240)[cite: 2]
-Title.TextSize = 12[cite: 2]
-Title.Font = Enum.Font.SourceSansBold[cite: 2]
-Title.TextXAlignment = Enum.TextXAlignment.Left[cite: 2]
+Title.TextColor3 = Color3.fromRGB(240, 240, 240)
+Title.TextSize = 12
+Title.Font = Enum.Font.SourceSansBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
 
 local MinimizeButton = Instance.new("TextButton", MainFrame)
-MinimizeButton.Size = UDim2.new(0, 25, 0, 25)[cite: 2]
-MinimizeButton.Position = UDim2.new(1, -30, 0, 5)[cite: 2]
-MinimizeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)[cite: 2]
-MinimizeButton.Text = "-"[cite: 2]
-MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)[cite: 2]
-MinimizeButton.TextSize = 16[cite: 2]
-MinimizeButton.Font = Enum.Font.SourceSansBold[cite: 2]
-MinimizeButton.BorderSizePixel = 0[cite: 2]
-Instance.new("UICorner", MinimizeButton).CornerRadius = UDim.new(0, 5)[cite: 2]
+MinimizeButton.Size = UDim2.new(0, 25, 0, 25)
+MinimizeButton.Position = UDim2.new(1, -30, 0, 5)
+MinimizeButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MinimizeButton.Text = "-"
+MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+MinimizeButton.TextSize = 16
+MinimizeButton.Font = Enum.Font.SourceSansBold
+MinimizeButton.BorderSizePixel = 0
+Instance.new("UICorner", MinimizeButton).CornerRadius = UDim.new(0, 5)
 
--- ====================================================
--- PHÂN KHU 1: HỆ THỐNG BAY (FLY CONTROLS)
--- ====================================================
-
+-- KHU VỰC BAY (FLY)
 local FlyButton = Instance.new("TextButton", MainFrame)
 FlyButton.Size = UDim2.new(0, 320, 0, 40)
 FlyButton.Position = UDim2.new(0.5, -160, 0, 40)
-FlyButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)[cite: 2]
-FlyButton.Text = "FLY: OFF [V]"[cite: 2]
-FlyButton.TextColor3 = Color3.fromRGB(180, 180, 180)[cite: 2]
+FlyButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+FlyButton.Text = "FLY: OFF [V]"
+FlyButton.TextColor3 = Color3.fromRGB(180, 180, 180)
 FlyButton.TextSize = 13
-FlyButton.Font = Enum.Font.SourceSansBold[cite: 2]
-FlyButton.BorderSizePixel = 0[cite: 2]
+FlyButton.Font = Enum.Font.SourceSansBold
+FlyButton.BorderSizePixel = 0
 
 local ButtonCorner = Instance.new("UICorner", FlyButton)
-ButtonCorner.CornerRadius = UDim.new(0, 8)[cite: 2]
+ButtonCorner.CornerRadius = UDim.new(0, 8)
 local ButtonStroke = Instance.new("UIStroke", FlyButton)
-ButtonStroke.Color = Color3.fromRGB(150, 40, 40)[cite: 2]
-ButtonStroke.Thickness = 1.5[cite: 2]
+ButtonStroke.Color = Color3.fromRGB(150, 40, 40)
+ButtonStroke.Thickness = 1.5
 
 local SpeedFrame = Instance.new("Frame", MainFrame)
 SpeedFrame.Size = UDim2.new(0, 320, 0, 40)
 SpeedFrame.Position = UDim2.new(0.5, -160, 0, 85)
-SpeedFrame.BackgroundTransparency = 1[cite: 2]
+SpeedFrame.BackgroundTransparency = 1
 
 local SpeedLabel = Instance.new("TextLabel", SpeedFrame)
-SpeedLabel.Size = UDim2.new(0, 150, 1, 0)[cite: 2]
-SpeedLabel.Position = UDim2.new(0, 0, 0, 0)[cite: 2]
-SpeedLabel.BackgroundTransparency = 1[cite: 2]
-SpeedLabel.Text = "SPEED: " .. tostring(speed)[cite: 2]
-SpeedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)[cite: 2]
-SpeedLabel.TextSize = 13[cite: 2]
-SpeedLabel.Font = Enum.Font.SourceSansBold[cite: 2]
-SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left[cite: 2]
+SpeedLabel.Size = UDim2.new(0, 150, 1, 0)
+SpeedLabel.Position = UDim2.new(0, 0, 0, 0)
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Text = "SPEED: " .. tostring(speed)
+SpeedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+SpeedLabel.TextSize = 13
+SpeedLabel.Font = Enum.Font.SourceSansBold
+SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 local DecButton = Instance.new("TextButton", SpeedFrame)
 DecButton.Size = UDim2.new(0, 45, 0, 30)
 DecButton.Position = UDim2.new(1, -95, 0.5, -15)
-DecButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)[cite: 2]
-DecButton.Text = "-"[cite: 2]
-DecButton.TextColor3 = Color3.fromRGB(255, 255, 255)[cite: 2]
-DecButton.TextSize = 16[cite: 2]
-DecButton.Font = Enum.Font.SourceSansBold[cite: 2]
-DecButton.BorderSizePixel = 0[cite: 2]
-Instance.new("UICorner", DecButton).CornerRadius = UDim.new(0, 6)[cite: 2]
+DecButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+DecButton.Text = "-"
+DecButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+DecButton.TextSize = 16
+DecButton.Font = Enum.Font.SourceSansBold
+DecButton.BorderSizePixel = 0
+Instance.new("UICorner", DecButton).CornerRadius = UDim.new(0, 6)
 local DecStroke = Instance.new("UIStroke", DecButton)
-DecStroke.Color = Color3.fromRGB(55, 55, 55)[cite: 2]
-DecStroke.Thickness = 1[cite: 2]
+DecStroke.Color = Color3.fromRGB(55, 55, 55)
+DecStroke.Thickness = 1
 
 local IncButton = Instance.new("TextButton", SpeedFrame)
 IncButton.Size = UDim2.new(0, 45, 0, 30)
 IncButton.Position = UDim2.new(1, -45, 0.5, -15)
-IncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)[cite: 2]
-IncButton.Text = "+"[cite: 2]
-IncButton.TextColor3 = Color3.fromRGB(255, 255, 255)[cite: 2]
-IncButton.TextSize = 16[cite: 2]
-IncButton.Font = Enum.Font.SourceSansBold[cite: 2]
-IncButton.BorderSizePixel = 0[cite: 2]
-Instance.new("UICorner", IncButton).CornerRadius = UDim.new(0, 6)[cite: 2]
+IncButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+IncButton.Text = "+"
+IncButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+IncButton.TextSize = 16
+IncButton.Font = Enum.Font.SourceSansBold
+IncButton.BorderSizePixel = 0
+Instance.new("UICorner", IncButton).CornerRadius = UDim.new(0, 6)
 local IncStroke = Instance.new("UIStroke", IncButton)
-IncStroke.Color = Color3.fromRGB(55, 55, 55)[cite: 2]
-IncStroke.Thickness = 1[cite: 2]
+IncStroke.Color = Color3.fromRGB(55, 55, 55)
+IncStroke.Thickness = 1
 
--- ====================================================
--- PHÂN KHU 2: HỆ THỐNG DANH SÁCH & ESP RƯƠNG (CHEST ONLY)
--- ====================================================
-
+-- KHU VỰC LỌC RƯƠNG & BẢNG CUỘN
 local ToggleESPBtn = Instance.new("TextButton", MainFrame)
 ToggleESPBtn.Size = UDim2.new(0, 155, 0, 35)
 ToggleESPBtn.Position = UDim2.new(0, 10, 0, 135)
@@ -193,8 +187,8 @@ local RefreshBtn = Instance.new("TextButton", MainFrame)
 RefreshBtn.Size = UDim2.new(0, 155, 0, 35)
 RefreshBtn.Position = UDim2.new(1, -165, 0, 135)
 RefreshBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-RefreshBtn.Text = "REFRESHING (1.5s)"
-RefreshBtn.TextColor3 = Color3.fromRGB(46, 204, 113) -- Đổi sang màu xanh lá báo hiệu đang tự động chạy
+RefreshBtn.Text = "AUTO-REFRESH (1.5s)"
+RefreshBtn.TextColor3 = Color3.fromRGB(46, 204, 113)
 RefreshBtn.TextSize = 12
 RefreshBtn.Font = Enum.Font.SourceSansBold
 Instance.new("UICorner", RefreshBtn).CornerRadius = UDim.new(0, 6)
@@ -237,7 +231,7 @@ ListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
     ScrollList.CanvasSize = UDim2.new(0, 0, 0, ListLayout.AbsoluteContentSize.Y + 15)
 end)
 
--- Hàm vẽ ESP chứa tên + Khoảng cách lơ lửng
+-- Hàm vẽ viền Highlight + Chữ ESP lơ lửng kèm khoảng cách thực tế
 local function applyESP(prompt, displayName, distance)
     local pos, targetObj = getPromptTarget(prompt)
     if not targetObj then return end
@@ -252,8 +246,8 @@ local function applyESP(prompt, displayName, distance)
     local tl = Instance.new("TextLabel", bbg)
     tl.Size = UDim2.new(1, 0, 1, 0)
     tl.BackgroundTransparency = 1
-    tl.TextColor3 = Color3.fromRGB(255, 185, 0) -- Đổi sang màu Vàng hoàng kim cho hợp với Rương
-    tl.Text = displayName .. " [" .. tostring(distance) .. "s]"
+    tl.TextColor3 = Color3.fromRGB(255, 185, 0) -- Màu Vàng Rương Báu
+    tl.Text = displayName .. " [" .. tostring(distance) .. " Studs]"
     tl.TextSize = 11
     tl.Font = Enum.Font.SourceSansBold
     tl.TextStrokeTransparency = 0.5
@@ -267,9 +261,8 @@ local function applyESP(prompt, displayName, distance)
     hl.Adornee = (targetObj:IsA("Attachment") and targetObj.Parent) or targetObj
 end
 
--- Hàm quét lọc Rương và cập nhật khoảng cách thực tế
+-- Hàm quét bản đồ lọc rương và tính khoảng cách
 local function refreshInteractableList()
-    -- Ghi nhớ rương đang chọn trước khi làm mới danh sách
     local lastSelectedPrompt = selectedPrompt
 
     ESP_Storage:ClearAllChildren()
@@ -285,21 +278,18 @@ local function refreshInteractableList()
 
     for _, obj in pairs(workspace:GetDescendants()) do
         if obj:IsA("ProximityPrompt") then
-            -- BỘ LỌC CHỈ TÌM CHỮ "CHEST" (Bỏ qua các thứ khác như hái nấm, nhặt cỏ...)
             local actionText = string.lower(obj.ActionText)
             local objectText = string.lower(obj.ObjectText)
             
+            -- Bộ lọc chuẩn: Chỉ quét rương (Bỏ qua rác rưởi khác trên map)
             if string.find(actionText, "chest") or string.find(objectText, "chest") then
                 local pos, target = getPromptTarget(obj)
                 if pos and target then
-                    -- Tính toán khoảng cách thời gian thực (Làm tròn số)
                     local distance = math.floor((hrp.Position - pos).Magnitude)
                     
-                    -- Đặt lại tên rương gọn gàng sạch sẽ
                     local cleanName = "Chest [Open Chest]"
                     local displayTitle = cleanName .. " - " .. tostring(distance) .. " Studs"
 
-                    -- Tạo nút hiển thị trong danh sách bảng điều khiển
                     local itemBtn = Instance.new("TextButton", ScrollList)
                     itemBtn.Size = UDim2.new(1, 0, 0, 35)
                     itemBtn.BackgroundColor3 = Color3.fromRGB(26, 26, 30)
@@ -311,7 +301,7 @@ local function refreshInteractableList()
                     Instance.new("UICorner", itemBtn).CornerRadius = UDim.new(0, 6)
                     Instance.new("UIStroke", itemBtn).Color = Color3.fromRGB(40, 40, 45)
 
-                    -- Nếu đây là rương người chơi đã bấm chọn từ trước, kích hoạt lại trạng thái Highlight xanh dương
+                    -- Khóa mục tiêu cũ (Không bị mất chọn khi danh sách tự làm mới)
                     if obj == lastSelectedPrompt then
                         selectedPrompt = obj
                         selectedButton = itemBtn
@@ -319,12 +309,10 @@ local function refreshInteractableList()
                         itemBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
                     end
 
-                    -- Vẽ ESP rương
                     if espEnabled then
                         applyESP(obj, cleanName, distance)
                     end
 
-                    -- Sự kiện khi bấm chọn rương trong menu
                     itemBtn.MouseButton1Click:Connect(function()
                         if selectedButton then
                             selectedButton.BackgroundColor3 = Color3.fromRGB(26, 26, 30)
@@ -340,21 +328,20 @@ local function refreshInteractableList()
         end
     end
     
-    -- Nếu rương cũ đã bị người khác mở mất hoặc biến mất, xóa biến khóa mục tiêu
     if selectedPrompt and not selectedPrompt:IsDescendantOf(workspace) then
         selectedPrompt = nil
     end
 end
 
--- VÒNG LẶP CHẠY NGẦM: TỰ ĐỘNG CẬP NHẬT MỖI 1.5 GIÂY
-task.spawn(function()
+-- VÒNG LẶP CHẠY NGẦM AUTO REFRESH MỖI 1.5 GIÂY (Dùng coroutine siêu tương thích)
+coroutine.wrap(function()
     while true do
-        task.wait(1.5)
+        wait(1.5)
         pcall(refreshInteractableList)
     end
-end)
+end)()
 
--- Sự kiện nhấn nút Dịch chuyển (Teleport)
+-- Các sự kiện nhấn nút điều khiển nâng cao
 TeleportBtn.MouseButton1Click:Connect(function()
     if selectedPrompt and selectedPrompt.Parent then
         local pos, _ = getPromptTarget(selectedPrompt)
@@ -364,20 +351,19 @@ TeleportBtn.MouseButton1Click:Connect(function()
             
             TeleportBtn.Text = "SUCCESSFULLY TELEPORTED!"
             TeleportBtn.BackgroundColor3 = Color3.fromRGB(46, 204, 113)
-            task.wait(0.6)
+            wait(0.6)
             TeleportBtn.Text = "TELE TO SELECTED CHEST"
             TeleportBtn.BackgroundColor3 = Color3.fromRGB(0, 136, 255)
         end
     else
         TeleportBtn.Text = "CHOOSE A CHEST FROM LIST FIRST!"
         TeleportBtn.BackgroundColor3 = Color3.fromRGB(231, 76, 60)
-        task.wait(1)
+        wait(1)
         TeleportBtn.Text = "TELE TO SELECTED CHEST"
         TeleportBtn.BackgroundColor3 = Color3.fromRGB(0, 136, 255)
     end
 end)
 
--- Sự kiện Bật/Tắt ESP nhanh
 ToggleESPBtn.MouseButton1Click:Connect(function()
     espEnabled = not espEnabled
     if espEnabled then
@@ -390,170 +376,165 @@ ToggleESPBtn.MouseButton1Click:Connect(function()
     refreshInteractableList()
 end)
 
--- Nút bấm thủ công (Vẫn giữ phòng khi bạn muốn ép xung refresh ngay lập tức)
 RefreshBtn.MouseButton1Click:Connect(function()
     refreshInteractableList()
 end)
 
--- Speed control events[cite: 2]
 local function updateSpeedDisplay()
-    SpeedLabel.Text = "SPEED: " .. tostring(speed)[cite: 2]
+    SpeedLabel.Text = "SPEED: " .. tostring(speed)
 end
 
 DecButton.MouseButton1Click:Connect(function()
-    if speed > 10 then [cite: 2]
-        speed = speed - 10[cite: 2]
-        updateSpeedDisplay()[cite: 2]
-    end[cite: 2]
+    if speed > 10 then 
+        speed = speed - 10
+        updateSpeedDisplay()
+    end
 end)
 
 IncButton.MouseButton1Click:Connect(function()
-    speed = speed + 10[cite: 2]
-    updateSpeedDisplay()[cite: 2]
+    speed = speed + 10
+    updateSpeedDisplay()
 end)
 
 -- ====================================================
--- SỰ KIỆN ĐIỀU KHIỂN FLY (V)[cite: 2]
+-- HỆ THỐNG BAY (FLY MECHANICS)
 -- ====================================================
 
 local function fly()
-    local character = player.Character[cite: 2]
-    if not character then return end[cite: 2]
-    local hrp = character:FindFirstChild("HumanoidRootPart")[cite: 2]
-    local humanoid = character:FindFirstChild("Humanoid")[cite: 2]
-    if not hrp or not humanoid then return end[cite: 2]
+    local character = player.Character
+    if not character then return end
+    local hrp = character:FindFirstChild("HumanoidRootPart")
+    local humanoid = character:FindFirstChild("Humanoid")
+    if not hrp or not humanoid then return end
     
-    if flyConnection then [cite: 2]
-        flyConnection:Disconnect() [cite: 2]
-        flyConnection = nil [cite: 2]
-    end[cite: 2]
+    if flyConnection then 
+        flyConnection:Disconnect() 
+        flyConnection = nil 
+    end
     
-    local oldBv = hrp:FindFirstChild("FlyVelocity")[cite: 2]
-    if oldBv then oldBv:Destroy() end[cite: 2]
-    local oldBg = hrp:FindFirstChild("FlyGyro")[cite: 2]
-    if oldBg then oldBg:Destroy() end[cite: 2]
+    local oldBv = hrp:FindFirstChild("FlyVelocity")
+    if oldBv then oldBv:Destroy() end
+    local oldBg = hrp:FindFirstChild("FlyGyro")
+    if oldBg then oldBg:Destroy() end
 
-    if flying then[cite: 2]
-        local bv = Instance.new("BodyVelocity")[cite: 2]
-        bv.Name = "FlyVelocity"[cite: 2]
-        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)[cite: 2]
-        bv.Velocity = Vector3.new(0, 0, 0)[cite: 2]
-        bv.Parent = hrp[cite: 2]
+    if flying then
+        local bv = Instance.new("BodyVelocity")
+        bv.Name = "FlyVelocity"
+        bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bv.Velocity = Vector3.new(0, 0, 0)
+        bv.Parent = hrp
         
-        local bg = Instance.new("BodyGyro")[cite: 2]
-        bg.Name = "FlyGyro"[cite: 2]
-        bg.P = 90000 [cite: 2]
-        bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)[cite: 2]
-        bg.CFrame = hrp.CFrame[cite: 2]
-        bg.Parent = hrp[cite: 2]
+        local bg = Instance.new("BodyGyro")
+        bg.Name = "FlyGyro"
+        bg.P = 90000 
+        bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        bg.CFrame = hrp.CFrame
+        bg.Parent = hrp
         
-        humanoid.PlatformStand = true[cite: 2]
+        humanoid.PlatformStand = true
         
-        flyConnection = RunService.RenderStepped:Connect(function()[cite: 2]
-            if not flying or not hrp:IsDescendantOf(workspace) then [cite: 2]
-                bv:Destroy()[cite: 2]
-                bg:Destroy()[cite: 2]
-                humanoid.PlatformStand = false[cite: 2]
-                if flyConnection then[cite: 2]
-                    flyConnection:Disconnect()[cite: 2]
-                    flyConnection = nil[cite: 2]
-                end[cite: 2]
-                return [cite: 2]
-            end[cite: 2]
+        flyConnection = RunService.RenderStepped:Connect(function()
+            if not flying or not hrp:IsDescendantOf(workspace) then 
+                bv:Destroy()
+                bg:Destroy()
+                humanoid.PlatformStand = false
+                if flyConnection then
+                    flyConnection:Disconnect()
+                    flyConnection = nil
+                end
+                return 
+            end
             
-            local cam = workspace.CurrentCamera[cite: 2]
-            local moveDir = Vector3.new(0, 0, 0)[cite: 2]
+            local cam = workspace.CurrentCamera
+            local moveDir = Vector3.new(0, 0, 0)
             
-            if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir += cam.CFrame.LookVector end[cite: 2]
-            if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir -= cam.CFrame.LookVector end[cite: 2]
-            if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir -= cam.CFrame.RightVector end[cite: 2]
-            if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir += cam.CFrame.RightVector end[cite: 2]
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir += cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir -= cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir -= cam.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir += cam.CFrame.RightVector end
             
-            bv.Velocity = moveDir * speed[cite: 2]
-            bg.CFrame = cam.CFrame[cite: 2]
-        end)[cite: 2]
-    else[cite: 2]
-        humanoid.PlatformStand = false[cite: 2]
-    end[cite: 2]
+            bv.Velocity = moveDir * speed
+            bg.CFrame = cam.CFrame
+        end)
+    else
+        humanoid.PlatformStand = false
+    end
 end
 
 local function ToggleFlyState()
-    local character = player.Character[cite: 2]
-    if flying then[cite: 2]
-        FlyButton.Text = "FLY: ACTIVE [V]"[cite: 2]
-        FlyButton.BackgroundColor3 = Color3.fromRGB(20, 180, 20)[cite: 2]
-        FlyButton.TextColor3 = Color3.fromRGB(255, 255, 255)[cite: 2]
-        ButtonStroke.Color = Color3.fromRGB(50, 255, 50)[cite: 2]
-        fly()[cite: 2]
-        if character then playFlyAnim(character, true) end[cite: 2]
-    else[cite: 2]
-        FlyButton.Text = "FLY: OFF [V]"[cite: 2]
-        FlyButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)[cite: 2]
-        FlyButton.TextColor3 = Color3.fromRGB(180, 180, 180)[cite: 2]
-        ButtonStroke.Color = Color3.fromRGB(150, 40, 40)[cite: 2]
-        fly()[cite: 2]
-        if character then playFlyAnim(character, false) end[cite: 2]
-    end[cite: 2]
+    local character = player.Character
+    if flying then
+        FlyButton.Text = "FLY: ACTIVE [V]"
+        FlyButton.BackgroundColor3 = Color3.fromRGB(20, 180, 20)
+        FlyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ButtonStroke.Color = Color3.fromRGB(50, 255, 50)
+        fly()
+        if character then playFlyAnim(character, true) end
+    else
+        FlyButton.Text = "FLY: OFF [V]"
+        FlyButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        FlyButton.TextColor3 = Color3.fromRGB(180, 180, 180)
+        ButtonStroke.Color = Color3.fromRGB(150, 40, 40)
+        fly()
+        if character then playFlyAnim(character, false) end
+    end
 end
 
 FlyButton.MouseButton1Click:Connect(function()
-    flying = not flying[cite: 2]
-    ToggleFlyState()[cite: 2]
+    flying = not flying
+    ToggleFlyState()
 end)
 
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.KeyCode == Enum.KeyCode.V then[cite: 2]
-        flying = not flying[cite: 2]
-        ToggleFlyState()[cite: 2]
-    end[cite: 2]
+    if not gameProcessed and input.KeyCode == Enum.KeyCode.V then
+        flying = not flying
+        ToggleFlyState()
+    end
 end)
 
 player.CharacterAdded:Connect(function(newCharacter)
-    if flying then[cite: 2]
-        flying = false[cite: 2]
-        ToggleFlyState()[cite: 2]
-    end[cite: 2]
+    if flying then
+        flying = false
+        ToggleFlyState()
+    end
 end)
 
--- ====================================================
--- LOGIC THU NHỎ / PHÓNG TO MENU (-)[cite: 2]
--- ====================================================
-
+-- THU NHỎ / PHÓNG TO MENU (-)
 local isMinimized = false
 MinimizeButton.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized[cite: 2]
-    if isMinimized then[cite: 2]
-        MainFrame.Size = UDim2.new(0, 35, 0, 35)[cite: 2]
-        MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30) [cite: 2]
-        MainStroke.Color = Color3.fromRGB(150, 40, 40) [cite: 2]
-        Title.Visible = false[cite: 2]
-        FlyButton.Visible = false[cite: 2]
-        SpeedFrame.Visible = false[cite: 2]
+    isMinimized = not isMinimized
+    if isMinimized then
+        MainFrame.Size = UDim2.new(0, 35, 0, 35)
+        MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30) 
+        MainStroke.Color = Color3.fromRGB(150, 40, 40) 
+        Title.Visible = false
+        FlyButton.Visible = false
+        SpeedFrame.Visible = false
         
         ToggleESPBtn.Visible = false
         RefreshBtn.Visible = false
         ScrollList.Visible = false
         TeleportBtn.Visible = false
         
-        MinimizeButton.Position = UDim2.new(0, 5, 0, 5)[cite: 2]
-        MinimizeButton.Text = "+"[cite: 2]
-    else[cite: 2]
+        MinimizeButton.Position = UDim2.new(0, 5, 0, 5)
+        MinimizeButton.Text = "+"
+    else
         MainFrame.Size = UDim2.new(0, 340, 0, 460)
-        MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18) [cite: 2]
-        MainStroke.Color = Color3.fromRGB(45, 45, 45) [cite: 2]
-        Title.Visible = true[cite: 2]
-        FlyButton.Visible = true[cite: 2]
-        SpeedFrame.Visible = true[cite: 2]
+        MainFrame.BackgroundColor3 = Color3.fromRGB(18, 18, 18) 
+        MainStroke.Color = Color3.fromRGB(45, 45, 45) 
+        Title.Visible = true
+        FlyButton.Visible = true
+        SpeedFrame.Visible = true
         
         ToggleESPBtn.Visible = true
         RefreshBtn.Visible = true
         ScrollList.Visible = true
         TeleportBtn.Visible = true
         
-        MinimizeButton.Position = UDim2.new(1, -30, 0, 5)[cite: 2]
-        MinimizeButton.Text = "-"[cite: 2]
-    end[cite: 2]
+        MinimizeButton.Position = UDim2.new(1, -30, 0, 5)
+        MinimizeButton.Text = "-"
+    end
 end)
 
--- Khởi chạy lần đầu tiên
+-- Khởi động quét dữ liệu lần đầu
 refreshInteractableList()
